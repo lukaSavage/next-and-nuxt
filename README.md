@@ -121,9 +121,107 @@ Next.js作为一个同构渲染的框架，它具有同类框架中最佳的“�
 - 利用 Serverless Functions 及 [API 路由](https://www.nextjs.cn/docs/api-routes/introduction) 构建 API 功能
 - 完全可扩展
 
-### 2.2  安装
+### 2.2  初始化
+
+#### 2.2.1 创建项目
 
 ```bash
-yarn add --dev react  react-dom  next axios redux react-redux express  body-parser  cors express-session connect-mongo mongoose koa koa-router
+npm init -y
+yarn add --dev typescript react @types/react react-dom @types/node next axios
+```
+
+#### 2.2.2 创建脚本
+
+```json
+{
+  "scripts": {
+    "dev": "next dev",            // 以开发模式启动 Next.js
+    "build": "next build",        // 以构建用于生产环境的应用程序
+    "start": "next start",        // 以启动 Next.js 生产环境服务器
+    "lint": "next lint"           // 以设置 Next.js 的内置 ESLint 配置
+  }
+}
+```
+
+> <font color="#f00">Next.js 是围绕着 [页面（pages）](https://www.nextjs.cn/docs/basic-features/pages) 的概念构造的。一个页面（page）就是一个从 `pages` 目录下的 `.js`、`.jsx`、`.ts` 或 `.tsx` 文件导出的 [React 组件](https://reactjs.org/docs/components-and-props.html)。</font>
+
+#### 2.2.3 创建home组件
+
+```tsx
+/*
+ * @Descripttion: next.js入门
+ * @Author: lukasavage
+ * @Date: 2022-06-14 21:02:18
+ * @LastEditors: lukasavage
+ * @LastEditTime: 2022-06-14 21:07:46
+ * @FilePath: \next-and-nuxt\pages\index.tsx
+ */
+import React from 'react';
+
+type Props = {};
+
+const Home = (props: Props) => {
+	return <div>hello, next.js~</div>;
+};
+
+export default Home;
+
+```
+
+接着执行`cnpm run dev`,在浏览器打开`http://localhost:3000`就可以跑通项目了~
+
+### 2.3 next.js的基本特性
+
+#### 2.3.1 页面
+
+> 在 Next.js 中，一个 **page（页面）** 就是一个从 `.js`、`jsx`、`.ts` 或 `.tsx` 文件导出（export）的 [React 组件](https://reactjs.org/docs/components-and-props.html) ，这些文件存放在 `pages` 目录下。每个 page（页面）都使用其文件名作为路由（route）。
+
+#### 2.3.2 获取数据
+
+### 2.4 路由
+
+### 2.5 集成koa
+
+> 由于Next自身的服务器只处理在SSR请求，无法处理API接口的请求。因此我们可以通过将next当做一个中间件，集成到我们自己的koa服务器上。
+
+#### 2.5.1 安装依赖
+
+```bash
+cnpm i koa koa-router
+```
+
+#### 2.5.2 具体实现
+
+1. 在根目录新建一个`client`的文件夹，再创建一个根目录`index.ts`,代码如下↓
+
+   ```tsx
+   let Koa = require('koa');
+   let Router = require('koa-router');
+   const next = require('next');
+   const dev = process.env.NODE_ENV !== 'production';
+   const app = next({ dev: true });
+   const handler = app.getRequestHandler();
+   app.prepare().then(() => {
+       const server = new Koa();
+       let router = new Router();
+       server.use(router.routes());
+       server.use(async (ctx, next) => {
+           await handler(ctx.req, ctx.res);
+           ctx.response = false;
+       });
+       server.listen(3000, () => console.log('server started at port 3000'));
+   });
+   ```
+
+   
+
+2. 接着修改package.json文件，更改启动项
+
+```json
+  "scripts": {
+    "client": "nodemon client",
+    "build": "next build",
+    "start": "next start"
+  }
 ```
 
