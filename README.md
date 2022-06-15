@@ -121,6 +121,7 @@ Next.js作为一个同构渲染的框架，它具有同类框架中最佳的“�
 - 利用 Serverless Functions 及 [API 路由](https://www.nextjs.cn/docs/api-routes/introduction) 构建 API 功能
 - 完全可扩展
 
+
 ### 2.2  初始化
 
 #### 2.2.1 创建项目
@@ -176,7 +177,117 @@ export default Home;
 
 > 在 Next.js 中，一个 **page（页面）** 就是一个从 `.js`、`jsx`、`.ts` 或 `.tsx` 文件导出（export）的 [React 组件](https://reactjs.org/docs/components-and-props.html) ，这些文件存放在 `pages` 目录下。每个 page（页面）都使用其文件名作为路由（route）。
 
+##### 预渲染
+
+Next.js 具有两种形式的预渲染： **静态生成（Static Generation）** 和 **服务器端渲染（Server-side Rendering）**。这两种方式的不同之处在于为 page（页面）生成 HTML 页面的 **时机** 。
+
+- [**静态生成 （推荐）**](https://www.nextjs.cn/docs/basic-features/pages#static-generation-recommended)：HTML 在 **构建时** 生成，并在每次页面请求（request）时重用。
+- [**服务器端渲染**](https://www.nextjs.cn/docs/basic-features/pages#server-side-rendering)：在 **每次页面请求（request）时** 重新生成 HTML。
+
 #### 2.3.2 获取数据
+
+在Next.js中，获取外部数据有两种方式：
+
+1. 您的页面 **内容** 取决于外部数据：使用 `getStaticProps`。
+2. 你的页面 **paths（路径）** 取决于外部数据：使用 `getStaticPaths` （通常还要同时使用 `getStaticProps`）。
+
+##### 2.3.2.1 场景1：[页面 **内容** 取决于外部数据](https://www.nextjs.cn/docs/basic-features/pages#场景-1：-页面-内容-取决于外部数据)
+
+要在预渲染时获取此数据，Next.js 允许你从同一文件 `export（导出）` 一个名为 `getStaticProps` 的 `async（异步）` 函数。该函数在构建时被调用，并允许你在预渲染时将获取的数据作为 `props` 参数传递给页面。如下示例👇
+
+```js
+function Blog({ posts }) {
+  // Render posts...
+}
+
+// 此函数在构建时被调用
+export async function getStaticProps() {
+  // 调用外部 API 获取博文列表
+  const res = await fetch('https://.../posts')
+  const posts = await res.json()
+
+  // 通过返回 { props: { posts } } 对象，Blog 组件
+  // 在构建时将接收到 `posts` 参数
+  return {
+    props: {
+      posts,
+    },
+  }
+}
+
+export default Blog
+```
+
+##### 2.3.2.2 场景2：路由传参
+
+```js
+function Post({ post }) {
+  // Render post...
+}
+
+export async function getStaticPaths() {
+  // 调用外部 API 获取博文列表
+  const res = await fetch('https://.../posts')
+  const posts = await res.json()
+
+  // 据博文列表生成所有需要预渲染的路径
+  const paths = posts.map((post) => ({
+    params: { id: post.id },
+  }))
+
+  // We'll pre-render only these paths at build time.
+  // { fallback: false } means other routes should 404.
+  return { paths, fallback: false }
+}
+
+// 在构建时也会被调用
+export async function getStaticProps({ params }) {
+  // params 包含此片博文的 `id` 信息。
+  // 如果路由是 /posts/1，那么 params.id 就是 1
+  const res = await fetch(`https://.../posts/${params.id}`)
+  const post = await res.json()
+
+  // 通过 props 参数向页面传递博文的数据
+  return { props: { post } }
+}
+
+export default Post
+```
+
+#### 2.3.3 使用CSS
+
+##### 全局CSS
+
+首先创建一个 [`pages/_app.js` 文件](https://www.nextjs.cn/docs/advanced-features/custom-app) （如果不存在的话）。 然后 [`import`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import) 该 `styles.css` 文件。
+
+> pages/_app.js文件，将作为你的layout布局组件，即每个页面都会加载
+
+代码如下👇
+
+```tsx
+// pages/_app.js
+import './css/index.css'
+
+export default function MyApp({ Component, pageProps }) {
+  return <Component {...pageProps} />
+}
+```
+
+##### 组件级CSS
+
+按照正常的`css module`的方式引入组件即可
+
+```tsx
+import styles from './Button.module.css'
+
+export function Button() {
+  return (
+    ...
+  )
+}
+```
+
+
 
 ### 2.4 路由
 
